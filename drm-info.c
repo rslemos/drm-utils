@@ -72,15 +72,54 @@ static char* getList(uint32_t* values, uint32_t count) {
 
 	return buffer;
 }
+
+static char* getConnectorType(uint32_t type) {
+	return "";
+}
+
+static char* getConnectorSubpixel(drmModeSubpixel subpixel) {
+	return "";
+}
+
+static char* getConnectorConnection(drmModeConnection connection) {
+	return "";
+}
+
+static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
+	drmModeConnector *conn;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		conn = drmModeGetConnector(fd, ids[i]);
+		if (!conn) {
+			fprintf(stderr, "      Connector %u: cannot retrieve (%d): %m\n\n", ids[i], errno);
+			continue;
+		}
+
+		fprintf(stderr, "      Connector %u:\n", conn->connector_id);
+		fprintf(stderr, "        Type: %s\n", getConnectorType(conn->connector_type));
+		fprintf(stderr, "        Dimensions: %umm x %umm\n", conn->mmWidth, conn->mmHeight);
+		fprintf(stderr, "        Subpixel: %s\n", getConnectorSubpixel(conn->subpixel));
+		fprintf(stderr, "        Connection: %s\n", getConnectorConnection(conn->connection));
+		fprintf(stderr, "        Encoders: %d: %s\n", conn->count_encoders, getList(conn->encoders, conn->count_encoders));
+		fprintf(stderr, "        Properties: %d: %s\n", conn->count_props, getList(conn->props, conn->count_props));
+		fprintf(stderr, "        Properties values: %d: %s\n", conn->count_props, getList(conn->prop_values, conn->count_props));
+		//fprintf(stderr, "        Modes: %d: %s\n", conn->count_modes, getList(conn->modes, conn->count_modes));
+
+		drmModeFreeConnector(conn);
+	}
+}
+
  
-static void printResources0(drmModeRes* res) {
+static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stderr, "  Resources:\n");
 	fprintf(stderr, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stderr, "    Height: %u - %u\n", res->min_height, res->max_height);
 	fprintf(stderr, "    Framebuffers: %d: %s\n", res->count_fbs, getList(res->fbs, res->count_fbs));
 	fprintf(stderr, "    CRTCs: %d: %s\n", res->count_crtcs, getList(res->crtcs, res->count_crtcs));
 	fprintf(stderr, "    Encoders: %d: %s\n", res->count_encoders, getList(res->encoders, res->count_encoders));
-	fprintf(stderr, "    Connectors: %d: %s\n", res->count_connectors, getList(res->connectors, res->count_connectors));
+	fprintf(stderr, "    Connectors: %d\n", res->count_connectors);
+	printConnectors(fd, res->connectors, res->count_connectors);
 }
 
 static void printResources(int fd) {
@@ -92,7 +131,7 @@ static void printResources(int fd) {
 		return;
 	}
 
-	printResources0(res);
+	printResources0(fd, res);
 
 	drmModeFreeResources(res);
 }
