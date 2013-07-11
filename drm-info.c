@@ -41,12 +41,7 @@ static char* getCapability(int fd, int cap) {
 	}
 }
 
-static void drminfo(char* device) {
-	int fd;
-
-	fd = open(device, O_RDONLY);
-
-	fprintf(stderr, "Device %s:\n", device);
+static void printCapabilities(int fd) {
 	fprintf(stderr, "  Capabilities:\n");
 	fprintf(stderr, "    DRM_CAP_DUMB_BUFFER: %s\n",
 			getCapability(fd, DRM_CAP_DUMB_BUFFER));
@@ -58,6 +53,16 @@ static void drminfo(char* device) {
 			getCapability(fd, DRM_CAP_DUMB_PREFER_SHADOW));
 	fprintf(stderr, "    DRM_CAP_PRIME: %s\n",
 			getCapability(fd, DRM_CAP_PRIME));
+}
+
+static void drminfo(char* device) {
+	int fd;
+
+	fd = open(device, O_RDONLY);
+
+	fprintf(stderr, "Device %s:\n", device);
+	printCapabilities(fd);
+	fprintf(stderr, "\n");
 
 	close(fd);
 }
