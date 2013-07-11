@@ -41,23 +41,28 @@ static char* getCapability(int fd, int cap) {
 	}
 }
 
+static void printCapabilities(int fd) {
+	fprintf(stdout, "  Capabilities:\n");
+	fprintf(stdout, "    DRM_CAP_DUMB_BUFFER: %s\n",
+			getCapability(fd, DRM_CAP_DUMB_BUFFER));
+	fprintf(stdout, "    DRM_CAP_VBLANK_HIGH_CRTC: %s\n",
+			getCapability(fd, DRM_CAP_VBLANK_HIGH_CRTC));
+	fprintf(stdout, "    DRM_CAP_DUMB_PREFERRED_DEPTH: %s\n",
+			getCapability(fd, DRM_CAP_DUMB_PREFERRED_DEPTH));
+	fprintf(stdout, "    DRM_CAP_DUMB_PREFER_SHADOW: %s\n",
+			getCapability(fd, DRM_CAP_DUMB_PREFER_SHADOW));
+	fprintf(stdout, "    DRM_CAP_PRIME: %s\n",
+			getCapability(fd, DRM_CAP_PRIME));
+}
+
 static void drminfo(char* device) {
 	int fd;
 
 	fd = open(device, O_RDONLY);
 
-	fprintf(stderr, "Device %s:\n", device);
-	fprintf(stderr, "  Capabilities:\n");
-	fprintf(stderr, "    DRM_CAP_DUMB_BUFFER: %s\n",
-			getCapability(fd, DRM_CAP_DUMB_BUFFER));
-	fprintf(stderr, "    DRM_CAP_VBLANK_HIGH_CRTC: %s\n",
-			getCapability(fd, DRM_CAP_VBLANK_HIGH_CRTC));
-	fprintf(stderr, "    DRM_CAP_DUMB_PREFERRED_DEPTH: %s\n",
-			getCapability(fd, DRM_CAP_DUMB_PREFERRED_DEPTH));
-	fprintf(stderr, "    DRM_CAP_DUMB_PREFER_SHADOW: %s\n",
-			getCapability(fd, DRM_CAP_DUMB_PREFER_SHADOW));
-	fprintf(stderr, "    DRM_CAP_PRIME: %s\n",
-			getCapability(fd, DRM_CAP_PRIME));
+	fprintf(stdout, "Device %s:\n", device);
+	printCapabilities(fd);
+	fprintf(stdout, "\n");
 
 	close(fd);
 }
