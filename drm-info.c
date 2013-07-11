@@ -23,11 +23,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <libdrm/drm.h>
 #include <xf86drm.h>
-
+#include <xf86drmMode.h>
 
 static char* getCapability(int fd, int cap) {
 	uint64_t has;
@@ -55,6 +56,26 @@ static void printCapabilities(int fd) {
 			getCapability(fd, DRM_CAP_PRIME));
 }
 
+static void printResources(int fd) {
+	drmModeRes *res;
+
+	res = drmModeGetResources(fd);
+	if (!res) {
+		fprintf(stdout, "cannot retrieve DRM resources (%d): %m\n", errno);
+		return;
+	}
+
+	fprintf(stdout, "  Resources:\n");
+	fprintf(stdout, "    Width: %u - %u\n", res->min_width, res->max_width);
+	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
+	fprintf(stdout, "    Framebuffers: %d\n", res->count_fbs);
+	fprintf(stdout, "    CRTCs: %d\n", res->count_crtcs);
+	fprintf(stdout, "    Encoders: %d\n", res->count_encoders);
+	fprintf(stdout, "    Connectors: %d\n", res->count_connectors);
+
+	drmModeFreeResources(res);
+}
+
 static void drminfo(char* device) {
 	int fd;
 
@@ -63,6 +84,7 @@ static void drminfo(char* device) {
 	fprintf(stdout, "Device %s:\n", device);
 	printCapabilities(fd);
 	fprintf(stdout, "\n");
+	printResources(fd);
 
 	close(fd);
 }
