@@ -55,14 +55,32 @@ static void printCapabilities(int fd) {
 			getCapability(fd, DRM_CAP_PRIME));
 }
 
+
+static char* getList(uint32_t* values, uint32_t count) {
+	static char buffer[512];
+	int i;
+
+	char* p = buffer;	
+
+	for (i = 0; i < count; i++) {
+		p += snprintf(p, 512 - (buffer - p), "%u, ", values[i]);
+	}
+
+	if (count > 0) {
+		*(p - 2) = '\0';
+	}
+
+	return buffer;
+}
+ 
 static void printResources0(drmModeRes* res) {
 	fprintf(stderr, "  Resources:\n");
 	fprintf(stderr, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stderr, "    Height: %u - %u\n", res->min_height, res->max_height);
-	fprintf(stderr, "    Framebuffers: %d\n", res->count_fbs);
-	fprintf(stderr, "    CRTCs: %d\n", res->count_crtcs);
-	fprintf(stderr, "    Encoders: %d\n", res->count_encoders);
-	fprintf(stderr, "    Connectors: %d\n", res->count_connectors);
+	fprintf(stderr, "    Framebuffers: %d: %s\n", res->count_fbs, getList(res->fbs, res->count_fbs));
+	fprintf(stderr, "    CRTCs: %d: %s\n", res->count_crtcs, getList(res->crtcs, res->count_crtcs));
+	fprintf(stderr, "    Encoders: %d: %s\n", res->count_encoders, getList(res->encoders, res->count_encoders));
+	fprintf(stderr, "    Connectors: %d: %s\n", res->count_connectors, getList(res->connectors, res->count_connectors));
 }
 
 static void printResources(int fd) {
