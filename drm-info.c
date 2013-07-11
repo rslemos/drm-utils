@@ -73,15 +73,106 @@ static char* getList(uint32_t* values, uint32_t count) {
 
 	return buffer;
 }
+
+static char* getConnectorType(uint32_t type) {
+	switch (type) {
+	case DRM_MODE_CONNECTOR_VGA:
+		return "VGA";
+	case DRM_MODE_CONNECTOR_DVII:
+		return "DVII";
+	case DRM_MODE_CONNECTOR_DVID:
+		return "DVID";
+	case DRM_MODE_CONNECTOR_DVIA:
+		return "DVIA";
+	case DRM_MODE_CONNECTOR_Composite:
+		return "Composite";
+	case DRM_MODE_CONNECTOR_SVIDEO:
+		return "SVIDEO";
+	case DRM_MODE_CONNECTOR_LVDS:
+		return "LVDS";
+	case DRM_MODE_CONNECTOR_Component:
+		return "Component";
+	case DRM_MODE_CONNECTOR_9PinDIN:
+		return "9PinDIN";
+	case DRM_MODE_CONNECTOR_DisplayPort:
+		return "DisplayPort";
+	case DRM_MODE_CONNECTOR_HDMIA:
+		return "HDMIA";
+	case DRM_MODE_CONNECTOR_HDMIB:
+		return "HDMIB";
+	case DRM_MODE_CONNECTOR_TV:
+		return "TV";
+	case DRM_MODE_CONNECTOR_eDP:
+		return "eDP";
+	default:
+		return "Unknown";
+	}
+}
+
+static char* getConnectorSubPixel(drmModeSubPixel subpixel) {
+	switch (subpixel) {
+	case DRM_MODE_SUBPIXEL_HORIZONTAL_RGB:
+		return "HORIZONTAL_RGB";
+	case DRM_MODE_SUBPIXEL_HORIZONTAL_BGR:
+		return "HORIZONTAL_BGR";
+	case DRM_MODE_SUBPIXEL_VERTICAL_RGB:
+		return "VERTICAL_RGB";
+	case DRM_MODE_SUBPIXEL_VERTICAL_BGR:
+		return "VERTICAL_BGR";
+	case DRM_MODE_SUBPIXEL_NONE:
+		return "NONE";
+	default:
+		return "unknown";
+	}
+}
+
+static char* getConnectorConnection(drmModeConnection connection) {
+	switch (connection) {
+	case DRM_MODE_CONNECTED:
+		return "connected";
+	case DRM_MODE_DISCONNECTED:
+		return "disconnected";
+	default:
+		return "unknown";
+	}
+}
+
+static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
+	drmModeConnector *conn;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		conn = drmModeGetConnector(fd, ids[i]);
+		if (!conn) {
+			fprintf(stdout, "      Connector %u: cannot retrieve (%d): %m\n\n", ids[i], errno);
+			continue;
+		}
+
+		fprintf(stdout, "      Connector %u:\n", conn->connector_id);
+		fprintf(stdout, "        Type: %s\n", getConnectorType(conn->connector_type));
+		fprintf(stdout, "        Dimensions: %umm x %umm\n", conn->mmWidth, conn->mmHeight);
+		fprintf(stdout, "        SubPixel: %s\n", getConnectorSubPixel(conn->subpixel));
+		fprintf(stdout, "        Connection: %s\n", getConnectorConnection(conn->connection));
+		fprintf(stdout, "        Encoders: %d: %s\n", conn->count_encoders, getList(conn->encoders, conn->count_encoders));
+		fprintf(stdout, "        Properties: %d: %s\n", conn->count_props, getList(conn->props, conn->count_props));
+		fprintf(stdout, "        Properties values: %d: %s\n", conn->count_props, getList(conn->prop_values, conn->count_props));
+		//fprintf(stdout, "        Modes: %d: %s\n", conn->count_modes, getList(conn->modes, conn->count_modes));
+		fprintf(stdout, "\n");
+
+		drmModeFreeConnector(conn);
+	}
+}
+
  
-static void printResources0(drmModeRes* res) {
+static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stdout, "  Resources:\n");
 	fprintf(stdout, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
 	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList(res->fbs, res->count_fbs));
 	fprintf(stdout, "    CRTCs: %d: %s\n", res->count_crtcs, getList(res->crtcs, res->count_crtcs));
 	fprintf(stdout, "    Encoders: %d: %s\n", res->count_encoders, getList(res->encoders, res->count_encoders));
-	fprintf(stdout, "    Connectors: %d: %s\n", res->count_connectors, getList(res->connectors, res->count_connectors));
+	fprintf(stdout, "    Connectors: %d\n", res->count_connectors);
+	printConnectors(fd, res->connectors, res->count_connectors);
 }
 
 static void printResources(int fd) {
@@ -93,7 +184,7 @@ static void printResources(int fd) {
 		return;
 	}
 
-	printResources0(res);
+	printResources0(fd, res);
 
 	drmModeFreeResources(res);
 }
