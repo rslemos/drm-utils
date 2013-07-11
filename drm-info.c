@@ -55,6 +55,16 @@ static void printCapabilities(int fd) {
 			getCapability(fd, DRM_CAP_PRIME));
 }
 
+static void printResources0(drmModeRes* res) {
+	fprintf(stderr, "  Resources:\n");
+	fprintf(stderr, "    Width: %u - %u\n", res->min_width, res->max_width);
+	fprintf(stderr, "    Height: %u - %u\n", res->min_height, res->max_height);
+	fprintf(stderr, "    Framebuffers: %d\n", res->count_fbs);
+	fprintf(stderr, "    CRTCs: %d\n", res->count_crtcs);
+	fprintf(stderr, "    Encoders: %d\n", res->count_encoders);
+	fprintf(stderr, "    Connectors: %d\n", res->count_connectors);
+}
+
 static void printResources(int fd) {
 	drmModeRes *res;
 
@@ -64,13 +74,7 @@ static void printResources(int fd) {
 		return;
 	}
 
-	fprintf(stderr, "  Resources:\n");
-	fprintf(stderr, "    Width: %u - %u\n", res->min_width, res->max_width);
-	fprintf(stderr, "    Height: %u - %u\n", res->min_height, res->max_height);
-	fprintf(stderr, "    Framebuffers: %d\n", res->count_fbs);
-	fprintf(stderr, "    CRTCs: %d\n", res->count_crtcs);
-	fprintf(stderr, "    Encoders: %d\n", res->count_encoders);
-	fprintf(stderr, "    Connectors: %d\n", res->count_connectors);
+	printResources0(res);
 
 	drmModeFreeResources(res);
 }
