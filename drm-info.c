@@ -115,6 +115,23 @@ static char* bitList(uint32_t mask) {
 	return buffer;
 }
 
+static void printFramebuffers(int fd, uint32_t* ids, uint32_t count) {
+	int i;
+
+	for (i = 0; i < count; i++) {
+		drmModeFB *fb;
+		fb = drmModeGetFB(fd, ids[i]);
+		fprintf(stdout, "      Framebuffer %u:\n", fb->fb_id);
+		fprintf(stdout, "        Handle: %u\n", fb->handle);
+		fprintf(stdout, "        Dimensions: %u x %u\n", fb->width, fb->height);
+		fprintf(stdout, "        Depth: %u\n", fb->depth);
+		fprintf(stdout, "        BPP: %u\n", fb->bpp);
+		fprintf(stdout, "        Pitch: %u\n", fb->pitch);
+		fprintf(stdout, "\n");
+		drmModeFreeFB(fb);
+	}
+}
+
 static char* getModeLine(drmModeModeInfo* mode) {
 	static char buffer[512];
 	char *p = buffer;
@@ -329,7 +346,8 @@ static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stdout, "  Resources:\n");
 	fprintf(stdout, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
-	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList32(res->fbs, res->count_fbs));
+	fprintf(stdout, "    Framebuffers: %d\n", res->count_fbs);
+	printFramebuffers(fd, res->fbs, res->count_fbs);
 	fprintf(stdout, "    CRTCs: %d\n", res->count_crtcs);
 	printCRTCs(fd, res->crtcs, res->count_crtcs);
 	fprintf(stdout, "    Encoders: %d\n", res->count_encoders);
