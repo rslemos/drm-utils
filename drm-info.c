@@ -57,7 +57,7 @@ static void printCapabilities(int fd) {
 }
 
 
-static char* getList(uint32_t* values, uint32_t count) {
+static char* getList32(uint32_t* values, uint32_t count) {
 	static char buffer[512];
 	int i;
 
@@ -176,9 +176,8 @@ static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
 		fprintf(stdout, "        Dimensions: %umm x %umm\n", conn->mmWidth, conn->mmHeight);
 		fprintf(stdout, "        SubPixel: %s\n", getConnectorSubPixel(conn->subpixel));
 		fprintf(stdout, "        Connection: %s\n", getConnectorConnection(conn->connection));
-		fprintf(stdout, "        Encoders: %d: %s\n", conn->count_encoders, getList(conn->encoders, conn->count_encoders));
-		fprintf(stdout, "        Properties: %d: %s\n", conn->count_props, getList(conn->props, conn->count_props));
-		fprintf(stdout, "        Properties values: %d: %s\n", conn->count_props, getList(conn->prop_values, conn->count_props));
+		fprintf(stdout, "        Encoders: %d: %s\n", conn->count_encoders, getList32(conn->encoders, conn->count_encoders));
+		fprintf(stdout, "        Properties: %d:\n", conn->count_props);
 		fprintf(stdout, "        Modes: %d:\n", conn->count_modes);
 		printModes(conn->modes, conn->count_modes);
 
@@ -193,9 +192,9 @@ static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stdout, "  Resources:\n");
 	fprintf(stdout, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
-	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList(res->fbs, res->count_fbs));
-	fprintf(stdout, "    CRTCs: %d: %s\n", res->count_crtcs, getList(res->crtcs, res->count_crtcs));
-	fprintf(stdout, "    Encoders: %d: %s\n", res->count_encoders, getList(res->encoders, res->count_encoders));
+	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList32(res->fbs, res->count_fbs));
+	fprintf(stdout, "    CRTCs: %d: %s\n", res->count_crtcs, getList32(res->crtcs, res->count_crtcs));
+	fprintf(stdout, "    Encoders: %d: %s\n", res->count_encoders, getList32(res->encoders, res->count_encoders));
 	fprintf(stdout, "    Connectors: %d\n", res->count_connectors);
 	printConnectors(fd, res->connectors, res->count_connectors);
 }
