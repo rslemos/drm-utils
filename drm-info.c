@@ -115,6 +115,37 @@ static char* bitList(uint32_t mask) {
 	return buffer;
 }
 
+static char* getModeLine(drmModeModeInfo* mode) {
+	static char buffer[512];
+	char *p = buffer;
+
+	p += snprintf(p, 512 - (p - buffer), "%10s: ", mode->name);
+	p += snprintf(p, 512 - (p - buffer), "%4ux%4u (%3ufps), ", mode->hdisplay, mode->vdisplay, mode->vrefresh);
+	p += snprintf(p, 512 - (p - buffer), "(%6ukHz, h:%4u-%4u %4u %2u, v:%4u-%4u %4u %2u), ", mode->clock,
+			mode->hsync_start, mode->hsync_end, mode->htotal, mode->hskew,
+			mode->vsync_start, mode->vsync_end, mode->vtotal, mode->vscan);
+	p += snprintf(p, 512 - (p - buffer), "0x%08x, %5d", mode->flags, mode->type);
+
+	return buffer;
+}
+
+static void printCRTCs(int fd, uint32_t* ids, uint32_t count) {
+	int i;
+
+	for (i = 0; i < count; i++) {
+		drmModeCrtc *crtc;
+		crtc = drmModeGetCrtc(fd, ids[i]);
+		fprintf(stdout, "      CRTC %u:\n", crtc->crtc_id);
+		fprintf(stdout, "        Dimensions: %u x %u\n", crtc->width, crtc->height);
+		fprintf(stdout, "        Buffer: %u\n", crtc->buffer_id);
+		fprintf(stdout, "        Position: %u, %u\n", crtc->x, crtc->y);
+		fprintf(stdout, "        Gamma size: %u\n", crtc->gamma_size);
+		fprintf(stdout, "        Mode: %s\n", crtc->mode_valid ? getModeLine(&crtc->mode) : "(invalid)");
+		fprintf(stdout, "\n");
+		drmModeFreeCrtc(crtc);
+	}
+}
+
 static char* getEncoderType(uint32_t type) {
 	static char buffer[64];
 
@@ -257,20 +288,6 @@ static char* getConnectorConnection(drmModeConnection connection) {
 	}
 }
 
-static char* getModeLine(drmModeModeInfo* mode) {
-	static char buffer[512];
-	char *p = buffer;
-
-	p += snprintf(p, 512 - (p - buffer), "%10s: ", mode->name);
-	p += snprintf(p, 512 - (p - buffer), "%4ux%4u (%3ufps), ", mode->hdisplay, mode->vdisplay, mode->vrefresh);
-	p += snprintf(p, 512 - (p - buffer), "(%6ukHz, h:%4u-%4u %4u %2u, v:%4u-%4u %4u %2u), ", mode->clock,
-			mode->hsync_start, mode->hsync_end, mode->htotal, mode->hskew,
-			mode->vsync_start, mode->vsync_end, mode->vtotal, mode->vscan);
-	p += snprintf(p, 512 - (p - buffer), "0x%08x, %5d", mode->flags, mode->type);
-
-	return buffer;
-}
-
 static void printModes(drmModeModeInfo* modes, uint32_t count) {
 	int i;
 
@@ -313,7 +330,8 @@ static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stdout, "    Width: %u - %u\n", res->min_width, res->max_width);
 	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
 	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList32(res->fbs, res->count_fbs));
-	fprintf(stdout, "    CRTCs: %d: %s\n", res->count_crtcs, getList32(res->crtcs, res->count_crtcs));
+	fprintf(stdout, "    CRTCs: %d\n", res->count_crtcs);
+	printCRTCs(fd, res->crtcs, res->count_crtcs);
 	fprintf(stdout, "    Encoders: %d\n", res->count_encoders);
 	printEncoders(fd, res->encoders, res->count_encoders);
 	fprintf(stdout, "    Connectors: %d\n", res->count_connectors);
