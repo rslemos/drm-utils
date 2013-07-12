@@ -137,6 +137,28 @@ static char* getConnectorConnection(drmModeConnection connection) {
 	}
 }
 
+static char* getModeLine(drmModeModeInfo* mode) {
+	static char buffer[512];
+	char *p = buffer;
+
+	p += snprintf(p, 512 - (p - buffer), "%10s: ", mode->name);
+	p += snprintf(p, 512 - (p - buffer), "%4ux%4u (%3ufps), ", mode->hdisplay, mode->vdisplay, mode->vrefresh);
+	p += snprintf(p, 512 - (p - buffer), "(%6ukHz, h:%4u-%4u %4u %2u, v:%4u-%4u %4u %2u), ", mode->clock,
+			mode->hsync_start, mode->hsync_end, mode->htotal, mode->hskew,
+			mode->vsync_start, mode->vsync_end, mode->vtotal, mode->vscan);
+	p += snprintf(p, 512 - (p - buffer), "0x%08x, %5d", mode->flags, mode->type);
+
+	return buffer;
+}
+
+static void printModes(drmModeModeInfo* modes, uint32_t count) {
+	int i;
+
+	for (i = 0; i < count; i++) {
+		fprintf(stdout, "          %2d. %s\n", i, getModeLine(&modes[i]));
+	}
+}
+
 static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
 	drmModeConnector *conn;
 	int i;
@@ -156,7 +178,9 @@ static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
 		fprintf(stdout, "        Encoders: %d: %s\n", conn->count_encoders, getList(conn->encoders, conn->count_encoders));
 		fprintf(stdout, "        Properties: %d: %s\n", conn->count_props, getList(conn->props, conn->count_props));
 		fprintf(stdout, "        Properties values: %d: %s\n", conn->count_props, getList(conn->prop_values, conn->count_props));
-		//fprintf(stdout, "        Modes: %d: %s\n", conn->count_modes, getList(conn->modes, conn->count_modes));
+		fprintf(stdout, "        Modes: %d:\n", conn->count_modes);
+		printModes(conn->modes, conn->count_modes);
+
 		fprintf(stdout, "\n");
 
 		drmModeFreeConnector(conn);
