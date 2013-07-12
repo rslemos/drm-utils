@@ -61,7 +61,8 @@ static char* getList(uint32_t* values, uint32_t count) {
 	static char buffer[512];
 	int i;
 
-	char* p = buffer;	
+	char* p = buffer;
+	*p = '\0';
 
 	for (i = 0; i < count; i++) {
 		p += snprintf(p, 512 - (buffer - p), "%u, ", values[i]);
