@@ -75,6 +75,67 @@ static char* getList32(uint32_t* values, uint32_t count) {
 	return buffer;
 }
 
+static char* getList64(uint64_t* values, uint32_t count) {
+	static char buffer[512];
+	int i;
+
+	char* p = buffer;
+	*p = '\0';
+
+	for (i = 0; i < count; i++) {
+		p += snprintf(p, 512 - (buffer - p), "%lu, ", values[i]);
+	}
+
+	if (count > 0) {
+		*(p - 2) = '\0';
+	}
+
+	return buffer;
+}
+
+static void printProperty(int fd, drmModePropertyRes* prop, uint64_t value) {
+    fprintf(stdout, "          Property: %i\n", prop->prop_id);
+    fprintf(stdout, "            Name: %s\n", prop->name);
+    fprintf(stdout, "            Flags: 0x%08x\n", prop->flags);
+    fprintf(stdout, "            Values: %d: %s\n", prop->count_values, getList64(prop->values, prop->count_values));
+
+    if (prop->flags & DRM_MODE_PROP_BLOB) {
+		drmModePropertyBlobRes* blob;
+
+		fprintf(stdout, "            BLOB: ");
+
+		blob = drmModeGetPropertyBlob(fd, value);
+		if (!blob) {
+		   fprintf(stdout, "error getting blob %lu\n", value);
+		} else {
+		   fprintf(stdout, "%d bytes, %08X...\n", blob->length, *(uint32_t *)blob->data);
+		   drmModeFreePropertyBlob(blob);
+		}
+    } else {
+    	int i;
+
+        fprintf(stdout, "            Enum: %lu\n", value);
+		for (i = 0; i < prop->count_enums; i++) {
+			fprintf(stdout, "              %1s %4lld = %s\n",
+					prop->enums[i].value == value ? "*" : "",
+					prop->enums[i].value, prop->enums[i].name);
+		}
+    }
+
+    fprintf(stdout, "\n");
+}
+
+static void printProperties(int fd, uint32_t* props, uint64_t* values, int count) {
+	drmModePropertyRes* prop;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		prop = drmModeGetProperty(fd, props[i]);
+		printProperty(fd, prop, values[i]);
+		drmModeFreeProperty(prop);
+    }
+}
+
 static char* getConnectorType(uint32_t type) {
 	switch (type) {
 	case DRM_MODE_CONNECTOR_VGA:
@@ -178,6 +239,7 @@ static void printConnectors(int fd, uint32_t* ids, uint32_t count) {
 		fprintf(stdout, "        Connection: %s\n", getConnectorConnection(conn->connection));
 		fprintf(stdout, "        Encoders: %d: %s\n", conn->count_encoders, getList32(conn->encoders, conn->count_encoders));
 		fprintf(stdout, "        Properties: %d:\n", conn->count_props);
+		printProperties(fd, conn->props, conn->prop_values, conn->count_props);
 		fprintf(stdout, "        Modes: %d:\n", conn->count_modes);
 		printModes(conn->modes, conn->count_modes);
 
