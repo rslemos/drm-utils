@@ -93,6 +93,64 @@ static char* getList64(uint64_t* values, uint32_t count) {
 	return buffer;
 }
 
+static char* bitList(uint32_t mask) {
+	static char buffer[512];
+	int i = 0;
+
+	char* p = buffer;
+	*p = '\0';
+
+	if (mask == 0) {
+		return "NONE";
+	}
+
+	while (mask > 0) {
+		if (mask & 1) p += snprintf(p, 512 - (buffer - p), "%2d, ", i);
+		i++;
+		mask >>= 1;
+	}
+
+	*(p - 2) = '\0';
+
+	return buffer;
+}
+
+static char* getEncoderType(uint32_t type) {
+	static char buffer[64];
+
+	switch (type) {
+	case DRM_MODE_ENCODER_NONE:
+		return "NONE";
+	case DRM_MODE_ENCODER_DAC:
+		return "DAC";
+	case DRM_MODE_ENCODER_TMDS:
+		return "TMDS";
+	case DRM_MODE_ENCODER_LVDS:
+		return "LVDS";
+	case DRM_MODE_ENCODER_TVDAC:
+		return "TVDAC";
+	default:
+		snprintf(buffer, 64, "%u (unknown)", type);
+		return buffer;
+	}
+}
+
+static void printEncoders(int fd, uint32_t* ids, uint32_t count) {
+	int i;
+
+	for (i = 0; i < count; i++) {
+		drmModeEncoder *enc;
+		enc = drmModeGetEncoder(fd, ids[i]);
+		fprintf(stdout, "      Encoder %u:\n", enc->encoder_id);
+		fprintf(stdout, "        Type: %s\n", getEncoderType(enc->encoder_type));
+		fprintf(stdout, "        CRTC: %u\n", enc->crtc_id);
+		fprintf(stdout, "        Possible CRTCs: %1$u, %1$#08x, %1$#016o, %2$s\n", enc->possible_crtcs, bitList(enc->possible_crtcs));
+		fprintf(stdout, "        Possible Clones: %1$u, %1$#08x, %1$#016o, %2$s\n", enc->possible_clones, bitList(enc->possible_clones));
+		fprintf(stdout, "\n");
+		drmModeFreeEncoder(enc);
+	}
+}
+
 static void printProperty(int fd, drmModePropertyRes* prop, uint64_t value) {
     fprintf(stdout, "          Property: %i\n", prop->prop_id);
     fprintf(stdout, "            Name: %s\n", prop->name);
@@ -256,7 +314,8 @@ static void printResources0(int fd, drmModeRes* res) {
 	fprintf(stdout, "    Height: %u - %u\n", res->min_height, res->max_height);
 	fprintf(stdout, "    Framebuffers: %d: %s\n", res->count_fbs, getList32(res->fbs, res->count_fbs));
 	fprintf(stdout, "    CRTCs: %d: %s\n", res->count_crtcs, getList32(res->crtcs, res->count_crtcs));
-	fprintf(stdout, "    Encoders: %d: %s\n", res->count_encoders, getList32(res->encoders, res->count_encoders));
+	fprintf(stdout, "    Encoders: %d\n", res->count_encoders);
+	printEncoders(fd, res->encoders, res->count_encoders);
 	fprintf(stdout, "    Connectors: %d\n", res->count_connectors);
 	printConnectors(fd, res->connectors, res->count_connectors);
 }
