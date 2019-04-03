@@ -22,5 +22,6 @@ LDFLAGS = -Wall
 
 CFLAGS += `pkg-config --cflags libdrm`
 LDFLAGS += `pkg-config --libs libdrm`
+LDLIBS += `pkg-config --libs libdrm`
 
 all: drm-info
